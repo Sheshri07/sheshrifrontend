@@ -6,7 +6,7 @@ const isLocalhost = window.location.hostname === "localhost" || window.location.
 export const API = axios.create({
   baseURL: isLocalhost
     ? "http://localhost:5000/api"
-    : "https://sheshri.onrender.com/api",
+    : "https://sheshri-backend.onrender.com/api",
 });
 
 API.interceptors.request.use(

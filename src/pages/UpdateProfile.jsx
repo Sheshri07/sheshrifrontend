@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { User, Mail, Phone, ChevronLeft, Save, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import { API } from '../utils/api';
 
 const UpdateProfile = () => {
     const { user, updateUser } = useAuth();
@@ -69,12 +69,7 @@ const UpdateProfile = () => {
         setLoading(true);
 
         try {
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-            const response = await axios.put(`${process.env.REACT_APP_API_URL || ''}/api/users/${user._id}`, formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const response = await API.put(`/users/${user._id}`, formData);
 
             if (response.status === 200) {
                 updateUser(response.data);

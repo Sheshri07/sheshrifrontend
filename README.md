@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# Sheshrifashion - Fashion & Clothing
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a modern e-commerce platform for Sheshrifashion, built with React.
 
 ## Available Scripts
 

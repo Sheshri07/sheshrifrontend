@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, User, Lock, Mail, ArrowRight } from "lucide-react";
+import { X, User, Lock, Mail, ArrowRight, Phone, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { loginUser, registerUser, googleLogin } from "../services/authService";
@@ -11,7 +11,9 @@ export default function AuthModal() {
     const toast = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [mode, setMode] = useState("login"); // 'login' or 'signup'
-    const [formData, setFormData] = useState({ username: "", email: "", password: "", confirmPassword: "", name: "" });
+    const [formData, setFormData] = useState({ username: "", email: "", password: "", confirmPassword: "", phoneNumber: "" });
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -52,11 +54,16 @@ export default function AuthModal() {
                     setLoading(false);
                     return;
                 }
+                if (!/^\d{10}$/.test(formData.phoneNumber)) {
+                    toast.error("Please enter a valid 10-digit phone number.");
+                    setLoading(false);
+                    return;
+                }
                 await registerUser({
                     username: formData.username,
-                    name: formData.name,
                     email: formData.email,
-                    password: formData.password
+                    password: formData.password,
+                    phoneNumber: formData.phoneNumber
                 });
                 // Auto login after signup or just switch to login? Let's switch to login for clarity or auto-login flow.
                 // For now, switch to login mode to force fresh login or auto-login flow.
@@ -114,20 +121,7 @@ export default function AuthModal() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {mode === "signup" && (
-                            <div className="relative group">
-                                <User className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    name="name"
-                                    placeholder="Full Name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-600 rounded-lg outline-none transition"
-                                    required
-                                />
-                            </div>
-                        )}
+
 
                         <div className="relative group">
                             <User className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
@@ -157,31 +151,63 @@ export default function AuthModal() {
                             </div>
                         )}
 
+                        {mode === "signup" && (
+                            <div className="relative group">
+                                <Phone className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                                <input
+                                    type="tel"
+                                    name="phoneNumber"
+                                    placeholder="Phone Number"
+                                    value={formData.phoneNumber}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setFormData({ ...formData, phoneNumber: val });
+                                    }}
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-600 rounded-lg outline-none transition"
+                                    required
+                                />
+                            </div>
+                        )}
+
                         <div className="relative group">
                             <Lock className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 name="password"
                                 placeholder="Password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-600 rounded-lg outline-none transition"
+                                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-600 rounded-lg outline-none transition"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
                         </div>
 
                         {mode === "signup" && (
                             <div className="relative group">
                                 <Lock className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
                                 <input
-                                    type="password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     name="confirmPassword"
                                     placeholder="Confirm Password"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-600 rounded-lg outline-none transition"
+                                    className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-600 rounded-lg outline-none transition"
                                     required
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                >
+                                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
                             </div>
                         )}
 

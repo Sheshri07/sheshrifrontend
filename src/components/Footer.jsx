@@ -1,9 +1,23 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Smartphone } from "lucide-react";
+import { getCategories } from "../services/categoryService";
 
 export default function Footer() {
   const location = useLocation();
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to fetch categories for footer:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleNavClick = (e, path) => {
     // Check if we're already on this path
@@ -25,11 +39,17 @@ export default function Footer() {
             <h4 className="font-serif font-bold text-gray-900 mb-2 md:mb-6 uppercase tracking-wider text-[10px] md:text-xs">Designer Wear</h4>
             <ul className="space-y-1.5 md:space-y-3 text-gray-500 text-[10px] md:text-sm">
               <li><Link to="/products" onClick={(e) => handleNavClick(e, "/products")} className="hover:text-primary-600 transition">All Products</Link></li>
-              <li><Link to="/products?category=suit" onClick={(e) => handleNavClick(e, "/products?category=suit")} className="hover:text-primary-600 transition">Suits</Link></li>
-              <li><Link to="/products?category=kurti" onClick={(e) => handleNavClick(e, "/products?category=kurti")} className="hover:text-primary-600 transition">Kurtis</Link></li>
-              <li><Link to="/products?category=dupatta" onClick={(e) => handleNavClick(e, "/products?category=dupatta")} className="hover:text-primary-600 transition">Dupattas</Link></li>
-              <li><Link to="/products?category=saree" onClick={(e) => handleNavClick(e, "/products?category=saree")} className="hover:text-primary-600 transition">Sarees</Link></li>
-              <li><Link to="/products?category=western%20dress" onClick={(e) => handleNavClick(e, "/products?category=western%20dress")} className="hover:text-primary-600 transition">Western Dress</Link></li>
+              {categories.map((category) => (
+                <li key={category._id}>
+                  <Link
+                    to={`/products?category=${category.name.toLowerCase()}`}
+                    onClick={(e) => handleNavClick(e, `/products?category=${category.name.toLowerCase()}`)}
+                    className="hover:text-primary-600 transition"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
