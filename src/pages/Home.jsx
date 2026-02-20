@@ -379,7 +379,7 @@ export default function Home() {
               <div className="absolute inset-x-2 bottom-2 md:inset-x-6 md:bottom-12">
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-2 md:p-6 rounded-2xl transform transition-all duration-500 group-hover:-translate-y-2 flex flex-col items-center text-center">
                   <span className="text-primary-200 text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Fusion</span>
-                  <h3 className="text-base md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">Designer Kurti Sets</h3>
+                  <h3 className="text-base md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">Designer Kurti</h3>
                   <p className="text-white/80 mb-2 md:mb-6 italic text-[10px] md:text-sm line-clamp-1 md:line-clamp-none">Everyday elegance.</p>
                   <Link
                     to="/products?category=kurta%20sets"
