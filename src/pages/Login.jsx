@@ -78,11 +78,16 @@ const Login = () => {
         {/* Left Side - Image/Brand Area */}
         <div className="hidden md:flex md:w-1/2 bg-gray-900 relative items-center justify-center p-12 overflow-hidden">
           <div className="absolute inset-0 z-0">
-            <img
-              src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=2574&auto=format&fit=crop"
-              alt="SheShri Fashion"
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
               className="w-full h-full object-cover opacity-60 scale-105 hover:scale-110 transition-transform duration-[20s] ease-in-out"
-            />
+            >
+              <source src="/images/video login.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           </div>
 

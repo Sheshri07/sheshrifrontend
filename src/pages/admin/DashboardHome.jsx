@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell
+    PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import {
     ArrowUp, ArrowDown, MoreHorizontal, DollarSign, ShoppingCart,
@@ -55,7 +55,11 @@ const DashboardHome = () => {
         totalProducts: 0,
         totalCustomers: 0,
         monthlyData: [],
-        pieData: []
+        pieData: [],
+        topSellingProducts: [],
+        userGrowth: [],
+        orderStatusData: [],
+        lowStockProducts: []
     });
 
     useEffect(() => {
@@ -73,6 +77,7 @@ const DashboardHome = () => {
 
             setProducts(productsData);
             setOrders(ordersData);
+            // console.log("Dashboard Stats Received:", statsData);
             setStats(statsData);
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
@@ -343,6 +348,125 @@ const DashboardHome = () => {
                 </div>
             </div>
 
+            {/* Charts Section 2 - User Growth & Order Status */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* User Growth Chart */}
+                <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+                    <h2 className="font-bold text-gray-900 text-lg mb-1">User Growth</h2>
+                    <p className="text-sm text-gray-500 mb-6">New registrations per month</p>
+                    <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.userGrowth}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                <XAxis
+                                    dataKey="name"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                    dy={10}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: '#F3F4F6' }}
+                                    contentStyle={{
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                        padding: '12px'
+                                    }}
+                                />
+                                <Bar
+                                    dataKey="users"
+                                    fill="#6366F1"
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={30}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Order Status Breakdown */}
+                <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+                    <h2 className="font-bold text-gray-900 text-lg mb-1">Order Status</h2>
+                    <p className="text-sm text-gray-500 mb-6">Distribution of order statuses</p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+                        <div className="h-[250px] w-[250px] relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={stats.orderStatusData}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {stats.orderStatusData?.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                                <span className="text-xs text-gray-500 font-medium">Total</span>
+                                <span className="font-bold text-2xl text-gray-900">{stats.totalOrders}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-3 w-full sm:w-auto">
+                            {stats.orderStatusData?.slice(0, 5).map((item) => (
+                                <div key={item.name} className="flex items-center gap-3">
+                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></span>
+                                    <span className="text-gray-600 text-sm min-w-[100px]">{item.name}</span>
+                                    <span className="font-bold text-gray-900 ml-auto">{item.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Low Stock Alerts */}
+            {stats.lowStockProducts && stats.lowStockProducts.length > 0 && (
+                <div className="bg-red-50 p-6 rounded-2xl border border-red-100">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-red-100 rounded-lg">
+                            <Package className="text-red-600" size={20} />
+                        </div>
+                        <div>
+                            <h2 className="font-bold text-gray-900 text-lg">Low Stock Alerts</h2>
+                            <p className="text-sm text-gray-500">Products with inventory below threshold (10)</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {stats.lowStockProducts.map((product) => (
+                            <div key={product._id} className="bg-white p-4 rounded-xl shadow-sm border border-red-100 flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                                    <img
+                                        src={product.images[0]}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold text-gray-900 truncate">{product.name}</h4>
+                                    <p className="text-sm text-gray-500 truncate">{product.category}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-red-600 font-bold text-sm bg-red-50 px-2 py-0.5 rounded-full">
+                                            Only {product.countInStock} left
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Top Products */}
             <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -369,13 +493,13 @@ const DashboardHome = () => {
                             </tr>
                         </thead>
                         <tbody className="text-sm">
-                            {getTopProducts().map((product, index) => (
+                            {stats.topSellingProducts && stats.topSellingProducts.map((product, index) => (
                                 <tr key={product._id} className="group hover:bg-gray-50 transition-colors border-b border-gray-50">
                                     <td className="py-4 pl-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden shadow-sm">
-                                                {product.images?.[0] && (
-                                                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                                {product.image && (
+                                                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                                                 )}
                                             </div>
                                             <div>
@@ -388,16 +512,16 @@ const DashboardHome = () => {
                                         <span className="font-semibold text-gray-900">₹{product.price?.toLocaleString()}</span>
                                     </td>
                                     <td className="py-4">
-                                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                                            {product.category}
+                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                            {product.totalSold} Sold
                                         </span>
                                     </td>
                                     <td className="py-4 text-gray-600 font-medium">
-                                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                                        ₹{product.revenue?.toLocaleString()} Revenue
                                     </td>
                                     <td className="py-4">
-                                        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${product.inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                            {product.inStock ? '● Active' : '● Inactive'}
+                                        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700`}>
+                                            ● Active
                                         </span>
                                     </td>
                                 </tr>

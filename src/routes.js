@@ -20,6 +20,7 @@ import ProductList from "./pages/admin/ProductList";
 import ProductEdit from "./pages/admin/ProductEdit";
 import OrderList from "./pages/admin/OrderList";
 import OrderDetails from "./pages/admin/OrderDetails";
+import ReturnRequests from "./pages/admin/ReturnRequests";
 import Customers from "./pages/admin/Customers";
 import AllUsers from "./pages/admin/AllUsers";
 import UserDetails from "./pages/admin/UserDetails";
@@ -210,6 +211,7 @@ function RoutesConfig() {
           <Route path="product/create" element={<ProductEdit />} />
           <Route path="product/:id/edit" element={<ProductEdit />} />
           <Route path="orderlist" element={<OrderList />} />
+          <Route path="returns" element={<ReturnRequests />} />
           <Route path="order/:id" element={<OrderDetails />} />
           <Route path="customers" element={<Customers />} />
           <Route path="users" element={<AllUsers />} />

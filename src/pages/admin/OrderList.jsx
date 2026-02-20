@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { API } from "../../utils/api";
 import {
     Search, Eye, CheckCircle, XCircle, Clock, Package,
-    TrendingUp, RefreshCw, Calendar, User
+    TrendingUp, RefreshCw, Calendar, User, CheckSquare, Square
 } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 
@@ -14,6 +14,8 @@ const OrderList = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [selectedOrders, setSelectedOrders] = useState([]);
+    const [bulkAction, setBulkAction] = useState("");
     const toast = useToast();
 
     const fetchOrders = async () => {
@@ -67,6 +69,46 @@ const OrderList = () => {
         }
     };
 
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedOrders(filteredOrders.map(order => order._id));
+        } else {
+            setSelectedOrders([]);
+        }
+    };
+
+    const handleSelectOrder = (id) => {
+        if (selectedOrders.includes(id)) {
+            setSelectedOrders(selectedOrders.filter(orderId => orderId !== id));
+        } else {
+            setSelectedOrders([...selectedOrders, id]);
+        }
+    };
+
+    const handleBulkAction = async () => {
+        if (!bulkAction) {
+            toast.error("Please select an action");
+            return;
+        }
+        if (selectedOrders.length === 0) {
+            toast.error("No orders selected");
+            return;
+        }
+
+        try {
+            await API.put("/orders/bulk-update", {
+                orderIds: selectedOrders,
+                status: bulkAction
+            });
+            toast.success("Bulk update successful");
+            setSelectedOrders([]);
+            setBulkAction("");
+            fetchOrders();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to update orders");
+        }
+    };
+
     const stats = {
         total: orders.length,
         delivered: orders.filter(o => o.isDelivered).length,
@@ -95,13 +137,39 @@ const OrderList = () => {
                     <h1 className="text-3xl font-bold text-gray-900 mb-1">Orders</h1>
                     <p className="text-gray-500">{filteredOrders.length} orders found</p>
                 </div>
-                <button
-                    onClick={fetchOrders}
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-200 hover:border-primary-300"
-                >
-                    <RefreshCw size={18} />
-                    <span className="font-medium">Refresh</span>
-                </button>
+                <div className="flex gap-3">
+                    {selectedOrders.length > 0 && (
+                        <div className="flex items-center gap-2 bg-white p-1 pr-2 rounded-xl shadow-sm border border-gray-200">
+                            <select
+                                value={bulkAction}
+                                onChange={(e) => setBulkAction(e.target.value)}
+                                className="border-none bg-transparent text-sm focus:ring-0"
+                            >
+                                <option value="">Bulk Actions...</option>
+                                <option value="processing">Mark Processing</option>
+                                <option value="shipped">Mark Shipped</option>
+                                <option value="delivered">Mark Delivered</option>
+                                <option value="paid">Mark Paid</option>
+                            </select>
+                            <button
+                                onClick={handleBulkAction}
+                                className="px-3 py-1 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700"
+                            >
+                                Apply
+                            </button>
+                            <span className="text-xs text-gray-500 font-medium px-2 border-l border-gray-200">
+                                {selectedOrders.length} selected
+                            </span>
+                        </div>
+                    )}
+                    <button
+                        onClick={fetchOrders}
+                        className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-200 hover:border-primary-300"
+                    >
+                        <RefreshCw size={18} />
+                        <span className="font-medium">Refresh</span>
+                    </button>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -173,6 +241,14 @@ const OrderList = () => {
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b-2 border-gray-200">
                                 <tr>
+                                    <th className="px-6 py-4 text-left">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
+                                            onChange={handleSelectAll}
+                                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
+                                        />
+                                    </th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Order ID</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
@@ -184,7 +260,15 @@ const OrderList = () => {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {filteredOrders.map((order) => (
-                                    <tr key={order._id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={order._id} className={`hover:bg-gray-50 transition-colors ${selectedOrders.includes(order._id) ? 'bg-blue-50' : ''}`}>
+                                        <td className="px-6 py-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedOrders.includes(order._id)}
+                                                onChange={() => handleSelectOrder(order._id)}
+                                                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 h-4 w-4"
+                                            />
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className="font-mono text-sm text-gray-900">
                                                 #{order._id.slice(-8)}
@@ -223,7 +307,12 @@ const OrderList = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {order.isDelivered ? (
+                                            {order.trackingStatus === 'cancelled' ? (
+                                                <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                                                    <XCircle size={14} />
+                                                    Canceled by User
+                                                </span>
+                                            ) : order.isDelivered ? (
                                                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
                                                     <CheckCircle size={14} />
                                                     Delivered
@@ -244,7 +333,7 @@ const OrderList = () => {
                                                     <Eye size={14} />
                                                     View
                                                 </Link>
-                                                {!order.isDelivered && (
+                                                {!order.isDelivered && order.trackingStatus !== 'cancelled' && (
                                                     <button
                                                         onClick={() => deliverHandler(order._id)}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"

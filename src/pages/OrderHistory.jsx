@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Package, ChevronRight, ShoppingBag, Clock, MapPin, X, AlertCircle, RotateCcw, FileText, Ban } from 'lucide-react';
-import { getMyOrders, cancelOrder } from '../services/orderService';
+import { getMyOrders, cancelOrder, requestReturn } from '../services/orderService';
 import { getProductById } from '../services/productService';
 import { useToast } from '../context/ToastContext';
 import { useCart } from '../context/CartContext';
@@ -14,6 +14,8 @@ const OrderHistory = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showHelpModal, setShowHelpModal] = useState(false);
     const [cancelLoading, setCancelLoading] = useState(false);
+    const [returnLoading, setReturnLoading] = useState(false);
+    const [returnReason, setReturnReason] = useState("");
 
     const toast = useToast();
     const { addToCart } = useCart();
@@ -94,6 +96,7 @@ const OrderHistory = () => {
     };
 
     const openHelpModal = (order) => {
+        console.log("Opening help modal for order:", order);
         setSelectedOrder(order);
         setShowHelpModal(true);
     };
@@ -138,6 +141,27 @@ const OrderHistory = () => {
             toast.error(error.response?.data?.message || "Failed to cancel order");
         } finally {
             setCancelLoading(false);
+        }
+    };
+
+    const handleRequestReturn = async () => {
+        if (!selectedOrder) return;
+        if (!returnReason.trim()) {
+            toast.error("Please provide a reason for return");
+            return;
+        }
+
+        setReturnLoading(true);
+        try {
+            await requestReturn(selectedOrder._id, returnReason);
+            toast.success("Return request submitted successfully");
+            setReturnReason("");
+            setShowHelpModal(false);
+            fetchOrders();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to submit return request");
+        } finally {
+            setReturnLoading(false);
         }
     };
 
@@ -395,23 +419,85 @@ const OrderHistory = () => {
                             </div>
 
                             {/* Return / Exchange Option */}
-                            <div className="p-4 rounded-xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50 transition-all group">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                                        <RotateCcw size={20} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-bold text-gray-900">Return or Replace</h3>
-                                        <p className="text-xs text-gray-500 mt-1">Received a damaged item or wrong size? Let us know.</p>
-                                        <a
-                                            href={`mailto:sheshri07@gmail.com?subject=Return/Exchange Request for Order #${selectedOrder._id}&body=Hi Team,%0A%0AI would like to return/exchange items from my order #${selectedOrder._id} because...`}
-                                            className="mt-3 text-xs font-bold text-blue-600 border border-blue-200 bg-white px-4 py-2 rounded-lg hover:bg-blue-50 transition w-full block text-center"
-                                        >
-                                            Email Return Request
-                                        </a>
+                            {selectedOrder.trackingStatus === 'delivered' && (
+                                <div className="p-4 rounded-xl border border-gray-100 hover:border-blue-100 hover:bg-blue-50 transition-all group">
+                                    <div className="flex items-start gap-4">
+                                        <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
+                                            <RotateCcw size={20} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-bold text-gray-900">Return or Replace</h3>
+
+                                            {(!selectedOrder.returnStatus || selectedOrder.returnStatus === 'None') ? (
+                                                <>
+                                                    {(() => {
+                                                        if (selectedOrder.deliveredAt) {
+                                                            const deliveredDate = new Date(selectedOrder.deliveredAt);
+                                                            const currentDate = new Date();
+                                                            const diffTime = Math.abs(currentDate - deliveredDate);
+                                                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                                                            if (diffDays > 7) {
+                                                                return (
+                                                                    <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                                                                        <p className="text-xs text-red-600 font-bold">
+                                                                            order not retund becuse retund request only submit with 7 din of the delevvery
+                                                                        </p>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        }
+
+                                                        return (
+                                                            <>
+                                                                <p className="text-xs text-gray-500 mt-1">Received a damaged item or wrong size? Request a return below.</p>
+                                                                <textarea
+                                                                    value={returnReason}
+                                                                    onChange={(e) => setReturnReason(e.target.value)}
+                                                                    placeholder="Please describe the issue (e.g., Wrong size, Damaged item)..."
+                                                                    className="w-full mt-3 p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none resize-none"
+                                                                    rows="2"
+                                                                />
+                                                                <button
+                                                                    onClick={handleRequestReturn}
+                                                                    disabled={returnLoading}
+                                                                    className="mt-3 text-xs font-bold text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full block text-center disabled:opacity-50"
+                                                                >
+                                                                    {returnLoading ? 'Submitting...' : 'Submit Return Request'}
+                                                                </button>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </>
+                                            ) : (
+                                                <div className="mt-2">
+                                                    <p className="text-xs text-gray-500 mb-2">Return Status:</p>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider 
+                                                        ${selectedOrder.returnStatus === 'Requested' ? 'bg-orange-100 text-orange-700' :
+                                                            selectedOrder.returnStatus === 'Approved' ? 'bg-blue-100 text-blue-700' :
+                                                                selectedOrder.returnStatus === 'Completed' ? 'bg-green-100 text-green-700' :
+                                                                    'bg-red-100 text-red-700'}`}>
+                                                        {selectedOrder.returnStatus}
+                                                    </span>
+                                                    {selectedOrder.returnReason && (
+                                                        <p className="text-xs text-gray-500 mt-2 italic">"{selectedOrder.returnReason}"</p>
+                                                    )}
+                                                    {(selectedOrder.returnAdminNote || selectedOrder.adminNote) && (
+                                                        <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs">
+                                                            <p className="font-bold text-blue-800 mb-1 flex items-center gap-1">
+                                                                <FileText size={12} /> Message from Admin:
+                                                            </p>
+                                                            <p className="text-blue-700 leading-relaxed">
+                                                                {selectedOrder.returnAdminNote || selectedOrder.adminNote}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Refund Info Logic */}
                             {(selectedOrder.trackingStatus === 'cancelled' || selectedOrder.paymentResult?.status === 'refund_pending') && (

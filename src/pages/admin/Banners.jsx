@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { API } from "../../utils/api";
 import { Plus, Trash2, Image as ImageIcon, Upload, Edit2, X, Maximize2 } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
+import { getCategories } from "../../services/categoryService";
 
 const Banners = () => {
     const [banners, setBanners] = useState([]);
@@ -18,6 +19,8 @@ const Banners = () => {
     const [currentImage, setCurrentImage] = useState(null);
     const [currentMobileImage, setCurrentMobileImage] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
 
     const fetchBanners = async () => {
         try {
@@ -32,8 +35,28 @@ const Banners = () => {
         }
     };
 
+    const fetchProducts = async () => {
+        try {
+            const { data } = await API.get("/products");
+            setProducts(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const data = await getCategories();
+            setCategories(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
         fetchBanners();
+        fetchProducts();
+        fetchCategories();
     }, []);
 
     const handleUpload = async (e) => {
@@ -166,14 +189,44 @@ const Banners = () => {
                         />
                     </div>
                     <div className="flex-1 w-full">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Redirect Link (Optional)</label>
-                        <input
-                            type="text"
-                            placeholder="/products"
-                            value={link}
-                            onChange={(e) => setLink(e.target.value)}
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Link to Product</label>
+                        <select
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    setLink(`/product/${e.target.value}`);
+                                } else {
+                                    setLink("");
+                                }
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 mb-2"
+                            value={link.includes('/product/') ? link.split('/product/')[1] : ""}
+                        >
+                            <option value="">Select a product...</option>
+                            {products.map(product => (
+                                <option key={product._id} value={product._id}>
+                                    {product.name}
+                                </option>
+                            ))}
+                        </select>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Link to Category</label>
+                        <select
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    setLink(`/products?category=${e.target.value}`);
+                                } else {
+                                    setLink("");
+                                }
+                            }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
-                        />
+                            value={link.includes('category=') ? link.split('category=')[1] : ""}
+                        >
+                            <option value="">Select a category...</option>
+                            {categories.map(cat => (
+                                <option key={cat._id} value={cat.name}>
+                                    {cat.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="flex-1 w-full">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Alt Text (Optional)</label>

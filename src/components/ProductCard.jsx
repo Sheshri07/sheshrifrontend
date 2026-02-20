@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
+import LazyImage from "./LazyImage";
 
 export default function ProductCard({ product }) {
   return (
     <div className="group relative bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-primary-100/30 h-full flex flex-col">
       <Link to={`/product/${product._id || product.id}`}>
         <div className="relative overflow-hidden aspect-[4/5]">
-          <img
+          <LazyImage
             src={product.images?.[0] || product.image || "/placeholder.jpg"}
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"

@@ -29,3 +29,8 @@ export const abandonOrder = async (orderId) => {
     const { data } = await API.put(`/orders/${orderId}/abandon`);
     return data;
 };
+
+export const requestReturn = async (orderId, reason) => {
+    const { data } = await API.put(`/orders/${orderId}/request-return`, { reason });
+    return data;
+};

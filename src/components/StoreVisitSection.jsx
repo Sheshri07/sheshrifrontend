@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MapPin, Clock, Phone, ArrowRight, X } from 'lucide-react';
+import LazyImage from './LazyImage';
 
 const StoreVisitSection = () => {
     const [showImageModal, setShowImageModal] = useState(false);
@@ -65,8 +66,8 @@ const StoreVisitSection = () => {
                     {/* Image Side */}
                     <div className="order-1 lg:order-2 relative group cursor-pointer" onClick={() => setShowImageModal(true)}>
                         <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white aspect-[3/4] md:aspect-[4/3] bg-gray-100">
-                            <img
-                                src="/store-front.png"
+                            <LazyImage
+                                src="/images/Shop.jpeg"
                                 alt="Sheshri Fashion Store Front"
                                 className="w-full h-full object-cover bg-gray-200 transition-transform duration-700 group-hover:scale-105"
                             />
@@ -106,7 +107,7 @@ const StoreVisitSection = () => {
                         <X size={32} />
                     </button>
                     <img
-                        src="/store-front.png"
+                        src="/images/Shop.jpeg"
                         alt="Sheshri Fashion Store Front"
                         className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                         onClick={(e) => e.stopPropagation()}

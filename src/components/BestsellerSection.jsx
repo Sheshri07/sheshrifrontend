@@ -1,17 +1,17 @@
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import LazyImage from './LazyImage';
 
 const BestsellerCard = ({ product }) => {
     return (
         <div className="relative group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col p-2 md:p-3">
             <Link to={`/product/${product._id || product.id}`} className="block relative rounded-xl overflow-hidden">
                 <div className="relative aspect-[3/4] w-full overflow-hidden">
-                    <img
+                    <LazyImage
                         src={product.images?.[0] || product.image || "/placeholder.jpg"}
                         alt={product.name}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        loading="lazy"
                     />
                 </div>
             </Link>
@@ -29,7 +29,7 @@ const BestsellerCard = ({ product }) => {
     );
 };
 
-const BestsellerSection = ({ title, products, bgColor = "bg-[#FAF5FF]", showViewAll = true, viewAllLink = "/products", customPadding = "py-12 md:py-20", customMargin = "mb-12" }) => {
+const BestsellerSection = ({ title, products, bgColor = "bg-[#FAF5FF]", showViewAll = true, viewAllLink = "/products", customPadding = "py-12 md:py-20", customMargin = "mb-12", loading = false }) => {
     const scrollRef = useRef(null);
 
     const scroll = (direction) => {
@@ -39,6 +39,9 @@ const BestsellerSection = ({ title, products, bgColor = "bg-[#FAF5FF]", showView
             scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
     };
+
+    // If not loading and no products, don't render the section at all to avoid empty space
+    if (!loading && products.length === 0) return null;
 
     return (
         <section className={`${bgColor} ${customPadding} ${customMargin}`}>
@@ -71,7 +74,24 @@ const BestsellerSection = ({ title, products, bgColor = "bg-[#FAF5FF]", showView
                         className="flex items-stretch overflow-x-auto gap-4 md:gap-6 pb-6 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 md:mx-0 md:px-0"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
-                        {products.length > 0 ? (
+                        {loading ? (
+                            // Render skeleton loaders when loading
+                            [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                                <div
+                                    key={i}
+                                    className="w-[calc(50%-8px)] md:w-[calc(45%-18px)] lg:w-[calc(25%-20px)] snap-start flex-shrink-0 flex flex-col"
+                                >
+                                    <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm h-full flex flex-col p-2 md:p-3 animate-pulse">
+                                        <div className="relative rounded-xl overflow-hidden bg-gray-200 aspect-[3/4] w-full"></div>
+                                        <div className="mt-4 flex-grow flex flex-col justify-between">
+                                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                                            <div className="h-6 bg-gray-200 rounded w-1/3 mt-4"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
                             products.map((product) => (
                                 <div
                                     key={product._id || product.id}
@@ -80,8 +100,6 @@ const BestsellerSection = ({ title, products, bgColor = "bg-[#FAF5FF]", showView
                                     <BestsellerCard product={product} />
                                 </div>
                             ))
-                        ) : (
-                            <p className="w-full text-center text-gray-400 py-10">Loading bestsellers...</p>
                         )}
                     </div>
 

@@ -4,20 +4,26 @@ import ProductCard from "../components/ProductCard";
 import SplashScreen from "../components/SplashScreen";
 import FeatureModal from "../components/FeatureModal";
 import BestsellerSection from "../components/BestsellerSection";
-import SareeEditSection from '../components/SareeEditSection';
+
 import StoreVisitSection from '../components/StoreVisitSection';
 import ShopTheLook from '../components/ShopTheLook';
 import InstagramSection from '../components/InstagramSection';
 import HomeBannerSlider from '../components/HomeBannerSlider';
+import LazyImage from '../components/LazyImage';
 import { Link } from "react-router-dom";
 import { Play, ArrowRight, Truck, RotateCcw, Smartphone, Scissors, ChevronLeft, ChevronRight } from "lucide-react";
-import { getAllProducts } from "../services/productService";
+import { getAllProducts, getProductCategories } from "../services/productService";
 import { getCategories } from "../services/categoryService";
 import { safeSessionStorage } from "../utils/storage";
 
 export default function Home() {
   const [trendingProducts, setTrendingProducts] = useState([]);
+  const [sareeProducts, setSareeProducts] = useState([]);
+  const [categoryProducts, setCategoryProducts] = useState({});
   const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSareeLoading, setIsSareeLoading] = useState(true);
+  const [isCategoryProductsLoading, setIsCategoryProductsLoading] = useState(true);
   const scrollRef = React.useRef(null);
 
   const [showSplash, setShowSplash] = useState(true);
@@ -64,15 +70,17 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Fetch products and categories
-    const fetchData = async () => {
+    const fetchMainData = async () => {
       try {
+        setIsLoading(true);
         const [products, fetchedCategories] = await Promise.all([
-          getAllProducts(),
+          getAllProducts(), // Fetch all products without limit
           getCategories()
         ]);
 
-        setTrendingProducts(products);
+        // Shuffle products to mix all categories
+        const shuffledProducts = [...products].sort(() => Math.random() - 0.5);
+        setTrendingProducts(shuffledProducts);
 
         const mappedCategories = fetchedCategories.map((cat, index) => ({
           id: cat._id || index,
@@ -82,11 +90,74 @@ export default function Home() {
         }));
 
         setCategories(mappedCategories);
+
+        // Fetch products for all categories after categories are loaded
+        fetchCategoryProducts();
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching main data:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchData();
+
+    const fetchCategoryProducts = async () => {
+      try {
+        setIsCategoryProductsLoading(true);
+        // Use getProductCategories to get categories that actually have products
+        const distinctCategories = await getProductCategories();
+        const categoryData = {};
+
+        // Fetch products for each distinct category without any limit
+        await Promise.all(distinctCategories.map(async (cat) => {
+          try {
+            // Using exact name from distinct search, no limit
+            const products = await getAllProducts({ category: cat.name });
+            if (products && products.length > 0) {
+              categoryData[cat.name] = products;
+            }
+          } catch (error) {
+            console.error(`Error fetching products for category ${cat.name}:`, error);
+          }
+        }));
+
+        setCategoryProducts(categoryData);
+      } catch (err) {
+        console.error("Error fetching all category products:", err);
+      } finally {
+        setIsCategoryProductsLoading(false);
+      }
+    };
+
+    const fetchSareeData = async () => {
+      try {
+        setIsSareeLoading(true);
+        // 1. Try fetching specifically for 'saree' (optimized if backend supports it)
+        let sarees = await getAllProducts({ category: 'saree', limit: 8 });
+
+        // 2. Fallback: If no sarees found, try capitalized 'Saree' (resilience for case-sensitive backends)
+        if (!sarees || sarees.length === 0) {
+          sarees = await getAllProducts({ category: 'Saree', limit: 8 });
+        }
+
+        // 3. Last Resort Fallback: Fetch a larger batch and filter on frontend (ensures display if category naming is non-standard)
+        if (!sarees || sarees.length === 0) {
+          const allProducts = await getAllProducts({ limit: 40 });
+          sarees = allProducts.filter(p =>
+            p.category?.toLowerCase().includes('saree') ||
+            p.name?.toLowerCase().includes('saree')
+          ).slice(0, 8);
+        }
+
+        setSareeProducts(sarees);
+      } catch (err) {
+        console.error("Error fetching saree data:", err);
+      } finally {
+        setIsSareeLoading(false);
+      }
+    };
+
+    fetchMainData();
+    fetchSareeData();
   }, []);
 
   // Show splash screen on first visit
@@ -114,6 +185,7 @@ export default function Home() {
                   src={cat.image}
                   alt={cat.name}
                   className="h-full w-full object-cover"
+                  loading="lazy"
                 />
               </div>
               <h3 className="text-[9px] font-bold uppercase tracking-tight text-center leading-tight text-gray-800 break-words w-full h-5 line-clamp-2">
@@ -230,8 +302,8 @@ export default function Home() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             {/* The Saree Edit */}
             <div className="group relative h-[250px] md:h-[500px] lg:h-[600px] overflow-hidden rounded-3xl shadow-2xl border border-primary-100/50">
-              <img
-                src="https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=2000&auto=format&fit=crop"
+              <LazyImage
+                src="/images/Saree editt.jpeg"
                 alt="Saree Collection"
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               />
@@ -253,8 +325,8 @@ export default function Home() {
 
             {/* Modern Suits */}
             <div className="group relative h-[250px] md:h-[500px] lg:h-[600px] overflow-hidden rounded-3xl shadow-2xl border border-primary-100/50">
-              <img
-                src="https://img.theloom.in/blog/wp-content/uploads/2022/08/binu8746-e1659700914390.png"
+              <LazyImage
+                src="/images/Mode Suitt.jpeg"
                 alt="Suits Collection"
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               />
@@ -262,7 +334,7 @@ export default function Home() {
               <div className="absolute inset-x-2 bottom-2 md:inset-x-6 md:bottom-12">
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-2 md:p-6 rounded-2xl transform transition-all duration-500 group-hover:-translate-y-2 flex flex-col items-center text-center">
                   <span className="text-primary-200 text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Modern</span>
-                  <h3 className="text-base md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">Modern Suits</h3>
+                  <h3 className="text-base md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">The Suit Edit</h3>
                   <p className="text-white/80 mb-2 md:mb-6 italic text-[10px] md:text-sm line-clamp-1 md:line-clamp-none">Elegance in every stitch.</p>
                   <Link
                     to="/products?category=suit"
@@ -276,8 +348,8 @@ export default function Home() {
 
             {/* Western Dress */}
             <div className="group relative h-[250px] md:h-[500px] lg:h-[600px] overflow-hidden rounded-3xl shadow-2xl border border-primary-100/50">
-              <img
-                src="https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?q=80&w=2000&auto=format&fit=crop"
+              <LazyImage
+                src="/images/Western editt.jpeg"
                 alt="Western Dress Collection"
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               />
@@ -288,7 +360,7 @@ export default function Home() {
                   <h3 className="text-base md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">Western Dress</h3>
                   <p className="text-white/80 mb-2 md:mb-6 italic text-[10px] md:text-sm line-clamp-1 md:line-clamp-none">Contemporary styles.</p>
                   <Link
-                    to="/products?category=western"
+                    to="/products?category=western%20fits"
                     className="inline-flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-5 md:py-2.5 bg-white text-primary-900 text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-primary-50 transition-colors rounded-full shadow-lg"
                   >
                     Explore <ArrowRight size={12} className="hidden md:block" />
@@ -298,8 +370,8 @@ export default function Home() {
             </div>
 
             <div className="group relative h-[250px] md:h-[500px] lg:h-[600px] overflow-hidden rounded-3xl shadow-2xl border border-primary-100/50">
-              <img
-                src="/kurti-collection.png"
+              <LazyImage
+                src="/images/Kurtii.jpeg"
                 alt="Kurti Collection"
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               />
@@ -307,10 +379,10 @@ export default function Home() {
               <div className="absolute inset-x-2 bottom-2 md:inset-x-6 md:bottom-12">
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-2 md:p-6 rounded-2xl transform transition-all duration-500 group-hover:-translate-y-2 flex flex-col items-center text-center">
                   <span className="text-primary-200 text-[8px] md:text-xs font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2 block">Fusion</span>
-                  <h3 className="text-base md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">Designer Kurtis</h3>
+                  <h3 className="text-base md:text-3xl font-serif font-bold text-white mb-1 md:mb-2">Designer Kurti Sets</h3>
                   <p className="text-white/80 mb-2 md:mb-6 italic text-[10px] md:text-sm line-clamp-1 md:line-clamp-none">Everyday elegance.</p>
                   <Link
-                    to="/products?category=kurti"
+                    to="/products?category=kurta%20sets"
                     className="inline-flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-5 md:py-2.5 bg-white text-primary-900 text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-primary-50 transition-colors rounded-full shadow-lg"
                   >
                     Explore <ArrowRight size={12} className="hidden md:block" />
@@ -367,7 +439,7 @@ export default function Home() {
                 className="flex-shrink-0 w-[calc(20%-38.4px)] group flex flex-col items-center cursor-pointer snap-start"
               >
                 <div className="overflow-hidden rounded-full aspect-square w-full shadow-lg border-4 border-white transition-all duration-500 group-hover:shadow-2xl group-hover:scale-105 group-hover:border-primary-100">
-                  <img
+                  <LazyImage
                     src={cat.image}
                     alt={cat.name}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -381,21 +453,45 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <SareeEditSection />
+
 
       {/* Saree Edit Products */}
       <BestsellerSection
         title="The Saree Collection"
-        products={trendingProducts.filter(p =>
-          p.category?.toLowerCase().includes('saree') ||
-          p.name?.toLowerCase().includes('saree')
-        )}
+        products={sareeProducts}
+        loading={isSareeLoading}
         bgColor="bg-[#FAF5FF]"
         viewAllLink="/products?category=saree"
         customPadding="py-4 md:py-4"
         customMargin="mb-0"
       />
 
+      {/* Other Category Products
+      {!isCategoryProductsLoading && Object.entries(categoryProducts).length > 0 ? (
+        Object.entries(categoryProducts)
+          .map(([categoryName, products], index) => (
+            <BestsellerSection
+              key={categoryName}
+              title={`${categoryName} Collection`}
+              products={products}
+              loading={false}
+              bgColor={index % 2 === 0 ? "bg-white" : "bg-[#FAF5FF]/50"}
+              viewAllLink={`/products?category=${encodeURIComponent(categoryName)}`}
+              customPadding="py-12 md:py-16"
+              customMargin="mb-0"
+              showViewAll={true}
+            />
+          ))
+      ) : isCategoryProductsLoading && (
+        <BestsellerSection
+          title="Loading Collections..."
+          products={[]}
+          loading={true}
+          customPadding="py-12 md:py-16"
+          customMargin="mb-0"
+        />
+      )}
+ */}
 
       {/* Video Shopping Section */}
       <section className="w-full px-3 md:container md:mx-auto md:px-6 mb-8 md:mb-20">
@@ -425,7 +521,7 @@ export default function Home() {
           </div>
           <div className="w-full md:w-1/2 relative h-[200px] md:h-auto">
             <div className="absolute inset-0 bg-gradient-to-r from-[#f8f8f8] to-transparent z-10 via-transparent hidden md:block" />
-            <img
+            <LazyImage
               src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=2070&auto=format&fit=crop"
               alt="Video Shopping"
               className="w-full h-full object-cover"

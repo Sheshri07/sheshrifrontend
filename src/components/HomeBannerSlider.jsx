@@ -7,22 +7,7 @@ import { API } from '../utils/api';
 const HomeBannerSlider = () => {
     const [banners, setBanners] = useState([]);
 
-    const defaultBanners = [
-        {
-            _id: 'default-1',
-            image: '/slider-banners/banner1.jpg',
-            mobileImage: '/slider-banners/banner1.jpg',
-            link: '/products',
-            alt: 'Default Banner 1'
-        },
-        {
-            _id: 'default-2',
-            image: '/slider-banners/banner2.jpg',
-            mobileImage: '/slider-banners/banner2.jpg',
-            link: '/products?category=western',
-            alt: 'Default Banner 2'
-        }
-    ];
+    const defaultBanners = [];
 
     useEffect(() => {
         const fetchBanners = async () => {
@@ -31,11 +16,11 @@ const HomeBannerSlider = () => {
                 if (data && data.length > 0) {
                     setBanners(data);
                 } else {
-                    setBanners(defaultBanners);
+                    setBanners([]);
                 }
             } catch (err) {
                 console.error("Failed to fetch banners", err);
-                setBanners(defaultBanners);
+                setBanners([]);
             }
         };
         fetchBanners();
@@ -85,6 +70,8 @@ const HomeBannerSlider = () => {
                                 src={banner.image}
                                 alt={banner.alt || "Banner"}
                                 className="w-full h-auto md:h-full object-contain md:object-cover"
+                                loading={currentIndex === 0 ? "eager" : "lazy"}
+                                fetchpriority={currentIndex === 0 ? "high" : "low"}
                             />
                         </picture>
                     </Link>

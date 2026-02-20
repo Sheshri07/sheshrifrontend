@@ -1,160 +1,125 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const generateInvoicePDF = (order) => {
-    try {
-        // Robust check for different import structures
-        const JsPDFClass = jsPDF.jsPDF || jsPDF;
-        const doc = new JsPDFClass();
+    const doc = new jsPDF();
 
-        // Company Logo/Name
-        doc.setFontSize(26);
-        doc.setTextColor(231, 76, 60); // Primary Red Color
-        doc.text('Sheshri Fashion', 14, 22);
+    // Add Logo or Brand Name
+    doc.setFontSize(20);
+    doc.text("Kalki Fashion Clone", 14, 22);
 
-        // Invoice Title
-        doc.setFontSize(16);
-        doc.setTextColor(0, 0, 0);
-        doc.text('INVOICE', 14, 35);
+    // Invoice Title
+    doc.setFontSize(16);
+    doc.text("INVOICE", 150, 22);
+
+    // Order Details
+    doc.setFontSize(10);
+    doc.text(`Order ID: #${order._id.slice(-8)}`, 150, 30);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 150, 36);
+
+    // Bill To
+    doc.text("Bill To:", 14, 45);
+    doc.setFont("helvetica", "bold");
+    doc.text(order.shippingAddress.name, 14, 50);
+    doc.setFont("helvetica", "normal");
+    doc.text(order.shippingAddress.address, 14, 55);
+    doc.text(
+        `${order.shippingAddress.city}, ${order.shippingAddress.state} - ${order.shippingAddress.postalCode}`,
+        14,
+        60
+    );
+    doc.text(order.shippingAddress.country, 14, 65);
+    doc.text(`Phone: ${order.shippingAddress.phone}`, 14, 70);
+
+    // Payment Information
+    if (order.isPaid && order.paymentMethod !== 'COD') {
         doc.setFontSize(10);
-        doc.text(`Order ID: #${order._id || 'N/A'}`, 14, 42);
-        doc.text(`Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`, 14, 48);
-
-        // Bill To Section
-        doc.setFontSize(12);
-        doc.text('Bill To:', 140, 35);
-        doc.setFontSize(10);
-        const shipping = order.shippingAddress || {};
-        doc.text(shipping.name || '', 140, 42);
-        doc.text(shipping.address || '', 140, 48);
-        doc.text(`${shipping.city || ''}, ${shipping.postalCode || ''}`, 140, 54);
-        doc.text(shipping.country || '', 140, 60);
-        doc.text(`Phone: ${shipping.phone || ''}`, 140, 66);
-
-        // Table Data & Calculation
-        const tableColumn = ["Item", "Quantity", "Unit Price", "Total"];
-        const tableRows = [];
-
-        let productBaseTotal = 0;
-        let preDrapeTotal = 0;
-        let petticoatTotal = 0;
-
-        (order.orderItems || []).forEach(item => {
-            const price = item.price || 0;
-            const qty = item.qty || 0;
-
-            // --- Main Product Row ---
-            let itemName = item.name || 'Unknown Item';
-
-            // Stitching Details (stays with main item)
-            if (item.stitchingDetails && item.stitchingDetails.option === 'Stitched') {
-                itemName += `\n(Stitching: Stitched)`;
-            }
-
-            // Push Main Item
-            tableRows.push([
-                itemName,
-                qty,
-                `INR ${price.toLocaleString()}`,
-                `INR ${(price * qty).toLocaleString()}`
-            ]);
-            productBaseTotal += (price * qty);
-
-            // --- Add-on Rows ---
-            if (item.sareeAddOns) {
-                // Pre-Drape Row
-                if (item.sareeAddOns.preDrape) {
-                    const addOnPrice = 1750;
-                    tableRows.push([
-                        `Ready to Wear Service (for ${item.name || 'Item'})`,
-                        qty,
-                        `INR ${addOnPrice.toLocaleString()}`,
-                        `INR ${(addOnPrice * qty).toLocaleString()}`
-                    ]);
-                    preDrapeTotal += (addOnPrice * qty);
-                }
-
-                // Petticoat Row
-                if (item.sareeAddOns.petticoat) {
-                    const addOnPrice = 1245;
-                    tableRows.push([
-                        `Satin Petticoat (for ${item.name || 'Item'})`,
-                        qty,
-                        `INR ${addOnPrice.toLocaleString()}`,
-                        `INR ${(addOnPrice * qty).toLocaleString()}`
-                    ]);
-                    petticoatTotal += (addOnPrice * qty);
-                }
-            }
-        });
-
-        // Generate Table
-        autoTable(doc, {
-            head: [tableColumn],
-            body: tableRows,
-            startY: 80,
-            theme: 'grid',
-            headStyles: { fillColor: [231, 76, 60] },
-            bodyStyles: { valign: 'top' },
-            columnStyles: {
-                0: { cellWidth: 90 }, // Give more width to Item column
-            }
-        });
-
-        // Summary Information
-        const finalY = doc.lastAutoTable?.finalY || 80;
-        let currentY = finalY + 15;
-        const summaryX = 140;
-
-        // Subtotal (Product Base) matches the breakdown logic
-        doc.text(`Subtotal: INR ${productBaseTotal.toLocaleString()}`, summaryX, currentY);
-        currentY += 7;
-
-        // Add-ons Summary (Redundant if in table, but requested to appear in breakdown previously. 
-        // Keeping it ensures specific breakdown visibility, though strictly "Subtotal" usually sums the whole table.
-        // Given the design image showed "Subtotal" distinct from "Ready to Wear", we will maintain that distinction in the footer labels
-        // even though they are now line items.)
-
-        if (preDrapeTotal > 0) {
-            doc.text(`Ready to Wear: INR ${preDrapeTotal.toLocaleString()}`, summaryX, currentY);
-            currentY += 7;
+        doc.setFont("helvetica", "bold");
+        doc.text("Payment Information:", 14, 80);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Method: ${order.paymentMethod.toUpperCase()}`, 14, 85);
+        if (order.paymentResult?.id) {
+            doc.text(`Transaction ID: ${order.paymentResult.id}`, 14, 90);
         }
-
-        if (petticoatTotal > 0) {
-            doc.text(`Satin Petticoat: INR ${petticoatTotal.toLocaleString()}`, summaryX, currentY);
-            currentY += 7;
+        if (order.paymentResult?.razorpay_order_id) {
+            doc.text(`Razorpay ID: ${order.paymentResult.razorpay_order_id}`, 14, 95);
         }
-
-        // Tax
-        doc.text(`Tax: INR ${(order.taxPrice || 0).toLocaleString()}`, summaryX, currentY);
-        currentY += 7;
-
-        // Shipping (Explicitly Free as per design)
-        doc.text(`Shipping: INR 0`, summaryX, currentY);
-        currentY += 10;
-
-        // Total Amount
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Total Amount: INR ${(order.totalPrice || 0).toLocaleString()}`, 100, currentY); // Adjusted X for larger text
-
-        // Payment Status
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        const paymentStatus = order.isPaid ? "PAID" : "UNPAID (COD)";
-        doc.text(`Payment Status: ${paymentStatus}`, 14, finalY + 15);
-        if (order.paymentMethod) {
-            doc.text(`Payment Method: ${order.paymentMethod}`, 14, finalY + 22);
-        }
-
-        // Footer
-        doc.setFontSize(10);
-        doc.text('Thank you for shopping with us!', 14, doc.internal.pageSize.height - 20);
-
-        // Save the PDF
-        doc.save(`Invoice_${order._id || 'unknown'}.pdf`);
-    } catch (error) {
-        console.error("Internal PDF generation error:", error);
-        throw error;
     }
+
+    // Items Table
+    const tableColumn = ["Item", "Size", "Qty", "Price", "Total"];
+    const tableRows = [];
+
+    order.orderItems.forEach((item) => {
+        // Main Item
+        tableRows.push([
+            item.name,
+            item.size || "N/A",
+            item.qty,
+            `Rs. ${item.price.toLocaleString()}`,
+            `Rs. ${(item.price * item.qty).toLocaleString()}`,
+        ]);
+
+        // Pre-Drape Add-on
+        if (item.sareeAddOns?.preDrape) {
+            tableRows.push([
+                "  + Pre-Drape Service",
+                "-",
+                item.qty,
+                "Rs. 1,750",
+                `Rs. ${(1750 * item.qty).toLocaleString()}`,
+            ]);
+        }
+
+        // Petticoat Add-on
+        if (item.sareeAddOns?.petticoat) {
+            tableRows.push([
+                "  + Satin Petticoat",
+                "-",
+                item.qty,
+                "Rs. 1,245",
+                `Rs. ${(1245 * item.qty).toLocaleString()}`,
+            ]);
+        }
+
+        // Stitching Details
+        if (item.stitchingDetails?.option === 'Stitched') {
+            tableRows.push([
+                `  + Custom Stitching (${item.stitchingDetails.stitchingSize})`,
+                "-",
+                item.qty,
+                "Included",
+                "Rs. 0",
+            ]);
+        }
+    });
+
+    // AutoTable
+    autoTable(doc, {
+        startY: (order.isPaid && order.paymentMethod !== 'COD') ? 105 : 80,
+        head: [tableColumn],
+        body: tableRows,
+        theme: "grid",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [66, 66, 66] },
+    });
+
+    // Summary
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    doc.text(`Subtotal: Rs. ${order.itemsPrice.toLocaleString()}`, 140, finalY);
+    doc.text(`Tax: Rs. ${order.taxPrice.toLocaleString()}`, 140, finalY + 6);
+    doc.text(`Shipping: Rs. ${order.shippingPrice.toLocaleString()}`, 140, finalY + 12);
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: Rs. ${order.totalPrice.toLocaleString()}`, 140, finalY + 20);
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Thank you for your business!", 14, finalY + 30);
+
+    // Save PDF
+    doc.save(`Invoice_${order._id}.pdf`);
 };

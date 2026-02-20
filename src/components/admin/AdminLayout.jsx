@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, ShoppingCart, Users, Settings, Search, Menu, Home, MessageSquare, LogOut, Palette, ChevronDown, ChevronRight, Image as ImageIcon, Briefcase } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ShoppingCart, Users, Settings, Search, Menu, Home, MessageSquare, LogOut, Palette, ChevronDown, ChevronRight, Image as ImageIcon, Briefcase, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from '../NotificationBell';
@@ -97,6 +97,11 @@ const AdminLayout = () => {
                     <Link to="/admin/orderlist" className={linkClass('/admin/orderlist')} onClick={() => setSidebarOpen(false)}>
                         <ShoppingCart size={20} />
                         <span>Orders</span>
+                    </Link>
+
+                    <Link to="/admin/returns" className={linkClass('/admin/returns')} onClick={() => setSidebarOpen(false)}>
+                        <RefreshCw size={20} />
+                        <span>Returns</span>
                     </Link>
 
                     <Link to="/admin/customers" className={linkClass('/admin/customers')} onClick={() => setSidebarOpen(false)}>

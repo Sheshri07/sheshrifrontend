@@ -1,58 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Instagram } from 'lucide-react';
-import suits from '../assets/instagram/suits.png';
-import kurtis from '../assets/instagram/kurtis.png';
-import dupattas from '../assets/instagram/dupattas.png';
-import sarees from '../assets/instagram/sarees.png';
-import western from '../assets/instagram/western.png';
-import lehenga from '../assets/instagram/lehenga.png';
+import LazyImage from './LazyImage';
 
 const InstagramSection = () => {
     const [selectedPost, setSelectedPost] = useState(null);
+    const scrollRef = useRef(null);
 
-    // Mock Data mimicking the screenshot vibe
+    const scroll = (direction) => {
+        if (scrollRef.current) {
+            const { scrollLeft, clientWidth } = scrollRef.current;
+            const scrollAmount = direction === 'left' ? -clientWidth : clientWidth;
+            scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    };
+
+    // Instagram Posts Data using images from public/images
     const posts = [
         {
             id: 1,
-            image: suits,
-            caption: "Elegance redefined in our latest Suits collection. Perfect for every occasion where grace meets style. ❤️",
-            credit: "Collection - Royal Suits 2025",
-            date: "25 January"
+            image: '/images/IMG_1238.JPG.jpeg',
+            caption: "Vibrant hues and intricate details. Our latest lime green and pink ensemble is a celebration of tradition and modern grace. ✨",
+            credit: "Collection - Festive Suits 2025",
+            date: ""
         },
         {
             id: 2,
-            image: kurtis,
-            caption: "Casual yet chic! Our designer Kurtis are the perfect addition to your everyday wardrobe. ✨",
-            credit: "Style - Contemporary Kurtis",
-            date: "22 January"
+            image: '/images/IMG_1388.JPG.jpeg',
+            caption: "Chic, contemporary, and absolutely stunning. This white mini dress is the perfect choice for your next evening out. 💫",
+            credit: "Style - Modern Muse",
+            date: ""
         },
         {
             id: 3,
-            image: dupattas,
-            caption: "The finishing touch you need. Explore our handpicked Dupattas that complete your ethnic ensemble.",
-            credit: "Heritage Dupattas",
-            date: "20 January"
+            image: '/images/IMG_1446.JPG.jpeg',
+            caption: "Elegance in white. A timeless blazer set that exudes confidence and sophisticated style. 🤍",
+            credit: "Edit - Power Dressing",
+            date: ""
         },
         {
             id: 4,
-            image: sarees,
-            caption: "Timeless beauty wrapped in 6 yards of tradition. Our Saree edit is here to make you feel like royalty.",
-            credit: "Graceful Sarees",
-            date: "18 January"
+            image: '/images/IMG_1448.JPG.jpeg',
+            caption: "Comfort meets couture. Relax in style with our exquisitely crafted white lounge ensemble. 🛋️",
+            credit: "Collection - Resort Wear",
+            date: ""
         },
         {
             id: 5,
-            image: western,
-            caption: "Fusion fashion for the modern muse. Step out in style with our Western Dress collection.",
-            credit: "Western & Fusion Edit",
-            date: "15 January"
+            image: '/images/IMG_1735.JPG.jpeg',
+            caption: "Prints that pop! Our purple printed suit is designed for the woman who loves to make a statement. 💜",
+            credit: "Design - Floral Fusion",
+            date: ""
         },
         {
             id: 6,
-            image: lehenga,
-            caption: "Bridal dreams come to life with our exquisite Lehengas. Designed to make your big day unforgettable.",
-            credit: "Bridal Couture",
-            date: "12 January"
+            image: '/images/IMG_1736.JPG.jpeg',
+            caption: "A vision in ivory. This ethereal gown is crafted for moments that last a lifetime. 👗",
+            credit: "Couture - Evening Gala",
+            date: ""
+        },
+        {
+            id: 7,
+            image: '/images/IMG_1739.JPG.jpeg',
+            caption: "Think pink! Embrace your feminine side with this beautifully detailed traditional pink outfit. 💕",
+            credit: "Heritage - Classic Pink Edit",
+            date: ""
+        },
+        {
+            id: 8,
+            image: '/images/IMG_1740.JPG.jpeg',
+            caption: "The quintessential bridal red. A masterpiece lehenga that tells a story of heritage and hope. ❤️",
+            credit: "Bridal - The Wedding Edit",
+            date: ""
+        },
+        {
+            id: 9,
+            image: '/images/IMG_1171.PNG',
+            caption: "Discover the magic of 'Throne & Theater'. A collection where heritage meets the spotlight. Featuring our exquisite ivory and maroon traditional wear. �🏛️",
+            credit: "Collection - Throne & Theater 2025",
+            date: ""
         }
     ];
 
@@ -88,17 +113,35 @@ const InstagramSection = () => {
                 </a>
             </div>
 
-            {/* Grid Layout */}
-            {/* Grid Layout */}
-            <div className="container mx-auto px-4 md:px-12">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
-                    {posts.slice(0, 6).map((post) => (
+            {/* Grid Layout - Updated for 9 images in 1 row, 3 per view on mobile */}
+            <div className="container mx-auto px-2 md:px-12 relative group/insta-slider">
+                {/* Scroll Buttons for Mobile */}
+                <button
+                    onClick={() => scroll('left')}
+                    className="absolute -left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 rounded-full shadow-md flex items-center justify-center text-gray-800 border border-gray-100 md:hidden"
+                    aria-label="Scroll Left"
+                >
+                    <ChevronLeft size={18} strokeWidth={3} />
+                </button>
+                <button
+                    onClick={() => scroll('right')}
+                    className="absolute -right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 rounded-full shadow-md flex items-center justify-center text-gray-800 border border-gray-100 md:hidden"
+                    aria-label="Scroll Right"
+                >
+                    <ChevronRight size={18} strokeWidth={3} />
+                </button>
+
+                <div
+                    ref={scrollRef}
+                    className="flex md:grid md:grid-cols-9 gap-1 md:gap-4 overflow-x-auto no-scrollbar snap-x scroll-smooth"
+                >
+                    {posts.map((post) => (
                         <div
                             key={post.id}
-                            className="group relative aspect-square overflow-hidden cursor-pointer rounded-sm shadow-sm hover:shadow-md transition-all"
+                            className="group relative aspect-square overflow-hidden cursor-pointer rounded-sm shadow-sm hover:shadow-md transition-all flex-shrink-0 w-[calc(33.33%-3px)] md:w-auto snap-start"
                             onClick={() => setSelectedPost(post)}
                         >
-                            <img
+                            <LazyImage
                                 src={post.image}
                                 alt={post.caption}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -176,7 +219,7 @@ const InstagramSection = () => {
                                     <div className="mb-6">
                                         <h4 className="font-bold text-xs md:text-sm uppercase tracking-widest text-gray-900 mb-1">THE WEDDING EDIT</h4>
                                         <p className="text-[10px] md:text-xs text-gray-500 leading-relaxed">
-                                            In stores - Mumbai | Delhi | Ahmedabad | Bengaluru | Surat | Hyderabad<br />
+                                            In stores - Puri High Street, 101B, Sector 81, Faridabad, Haryana 121004<br />
                                             Online - www.sheshrifashion.com
                                         </p>
                                     </div>
@@ -200,3 +243,4 @@ const InstagramSection = () => {
 };
 
 export default InstagramSection;
+
